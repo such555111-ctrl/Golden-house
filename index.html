@@ -140,6 +140,21 @@
   .chip.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
   .chip.active::before{opacity:1;}
   .chip:hover:not(.active){border-color:var(--muted-dim);color:var(--text);}
+  /* --- переключатель коллекций: Все / Gold --- */
+  .collections{display:flex;gap:6px;margin:16px 20px 0;padding:5px;border-radius:999px;background:var(--bg-elev);border:1px solid var(--line);position:relative;}
+  .collection-btn{flex:1;border:none;background:transparent;border-radius:999px;padding:11px 14px;cursor:pointer;color:var(--muted);
+    font-family:var(--font-heading);font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+    display:flex;align-items:center;justify-content:center;gap:7px;transition:all .3s var(--ease);position:relative;overflow:hidden;}
+  .collection-btn:active{transform:scale(.96);}
+  .collection-btn.active{background:var(--accent);color:#fff;box-shadow:0 6px 18px rgba(201,87,127,.28);}
+  .collection-btn.gold.active{background:linear-gradient(135deg,#F3DC92 0%,#D4AF4F 45%,#B8902F 100%);color:#4A3508;box-shadow:0 6px 20px rgba(184,144,47,.38);}
+  .collection-btn.gold.active::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);transform:translateX(-120%);animation:goldShine 3.2s ease-in-out infinite;}
+  @keyframes goldShine{0%,55%{transform:translateX(-120%);}100%{transform:translateX(120%);}}
+  .collection-btn .cnt{font-size:10px;font-weight:600;opacity:.75;letter-spacing:.02em;}
+  .catalog-title.is-gold{background:linear-gradient(135deg,#C9A03A,#8A6A12 60%,#D9B556);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  .gold-lead{margin:10px 20px 0;font-size:12.5px;line-height:1.5;color:var(--muted);display:none;}
+  .gold-lead.show{display:block;animation:cardIn .5s var(--ease) both;}
+  .card-gold{color:#8A6A12 !important;}
   .sort-wrap{position:relative;flex:0 0 auto;}
   .sort-btn{width:40px;height:36px;border-radius:999px;border:1px solid var(--line);background:var(--bg-elev);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .25s var(--ease);}
   .sort-btn:active{transform:scale(.9);}
@@ -467,6 +482,12 @@
   </section>
   <h2 class="catalog-title" id="catalogAnchor">Каталог<span class="catalog-gem" aria-hidden="true"></span></h2>
 
+  <div class="collections" id="collections" style="display:none;">
+    <button class="collection-btn active" data-col="all" type="button">Все украшения</button>
+    <button class="collection-btn gold" data-col="gold" type="button">✦ Gold<span class="cnt" id="goldCnt"></span></button>
+  </div>
+  <p class="gold-lead" id="goldLead">Коллекция Gold — украшения V&nbsp;Gold с покрытием золота 750&nbsp;пробы. Выбирайте категорию и бренд.</p>
+
   <div class="filters-row">
     <div class="filters" id="filters"></div>
     <div class="sort-wrap">
@@ -712,6 +733,7 @@ let appliedPromo = null; // { code, type, value }
 let promoFormOpen = false;
 let activeCategory = 'Все';
 let activeBrand = 'Все';
+let activeCollection = 'all'; // 'all' | 'gold'
 let currentProduct = null;
 let sortMode = 'default';
 let ALL_CATEGORIES = [];
@@ -833,6 +855,38 @@ function renderTicker(){
   t.innerHTML = `<span>${msg.repeat(4)}</span><span>${msg.repeat(4)}</span>`;
 }
 
+function loadFilters(){
+  return fetch('/api/filters' + (activeCollection === 'gold' ? '?gold=1' : ''))
+    .then(r=>r.json())
+    .then(data=>{
+      ALL_CATEGORIES = data.categories || [];
+      ALL_BRANDS = data.brands || [];
+      return data;
+    });
+}
+
+function renderCollections(goldCount){
+  const wrap = document.getElementById('collections');
+  if (goldCount > 0) wrap.style.display = 'flex';
+  if (goldCount != null) document.getElementById('goldCnt').textContent = goldCount ? ` · ${goldCount}` : '';
+  wrap.querySelectorAll('.collection-btn').forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.col === activeCollection);
+    btn.onclick = () => {
+      if (btn.dataset.col === activeCollection) return;
+      activeCollection = btn.dataset.col;
+      activeCategory = 'Все';
+      activeBrand = 'Все';
+      renderCollections();
+      const isGold = activeCollection === 'gold';
+      const title = document.getElementById('catalogAnchor');
+      title.classList.toggle('is-gold', isGold);
+      title.firstChild.textContent = isGold ? 'Gold' : 'Каталог';
+      document.getElementById('goldLead').classList.toggle('show', isGold);
+      loadFilters().then(()=>{ renderFilters(); renderBrandFilters(); renderGrid(); });
+    };
+  });
+}
+
 function renderFilters(){
   const cats = ['Все', ...ALL_CATEGORIES];
   filtersEl.innerHTML = cats.map(c =>
@@ -895,7 +949,7 @@ function cardHTML(p, i){
           <button class="card-arrow card-arrow-r" data-id="${p.id}" data-dir="1" aria-label="Следующее фото">›</button>
           <div class="card-dots">${imgs.map((_,di)=>`<div class="card-dot ${di===0?'active':''}"></div>`).join('')}</div>
         ` : ''}
-        <div class="card-label">${p.category}${p.brand ? ' · ' + p.brand : ''}</div>
+        <div class="card-label">${p.gold ? '<span class="card-gold">✦</span> ' : ''}${p.category}${p.brand ? ' · ' + p.brand : ''}</div>
       </div>
       <div class="card-name">${p.name}</div>
       <div class="card-price">${priceHTML(p)}</div>
@@ -952,6 +1006,7 @@ sortMenu.querySelectorAll('.sort-opt').forEach(opt=>{
 // --- каталог: грузим товары порциями (по PER_PAGE штук), а не всё сразу -
 function buildProductsQuery(page){
   const params = new URLSearchParams();
+  if (activeCollection === 'gold') params.set('gold', '1');
   if (activeCategory !== 'Все') params.set('category', activeCategory);
   if (activeBrand !== 'Все') params.set('brand', activeBrand);
   if (sortMode !== 'default') params.set('sort', sortMode);
@@ -1136,7 +1191,7 @@ function openProduct(id){
   currentProduct = PRODUCTS_MAP.get(id);
   const p = currentProduct;
   renderGallery(p);
-  document.getElementById('pdCat').textContent = p.category + (p.brand ? ' · ' + p.brand : '');
+  document.getElementById('pdCat').textContent = (p.gold ? '✦ Gold · ' : '') + p.category + (p.brand ? ' · ' + p.brand : '');
   const pdBadge = document.getElementById('pdBadge');
   if (p.badge && BADGE_LABELS[p.badge]){
     pdBadge.textContent = BADGE_LABELS[p.badge];
@@ -1721,9 +1776,8 @@ document.querySelectorAll('.sheet').forEach(sheet=>{
 
 updateFavBadge();
 
-fetch('/api/filters').then(r=>r.json()).then(data=>{
-  ALL_CATEGORIES = data.categories || [];
-  ALL_BRANDS = data.brands || [];
+loadFilters().then(data=>{
+  renderCollections(data.gold_count || 0);
   renderTicker();
   renderFilters();
   renderBrandFilters();

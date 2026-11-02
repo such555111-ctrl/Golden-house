@@ -123,6 +123,13 @@ def sanitize_badge(raw):
     return b if b in ALLOWED_BADGES else None
 
 
+def sanitize_gold(raw):
+    """Флаг «товар из коллекции Gold»: принимает bool / 1 / "true" / "1"."""
+    if isinstance(raw, str):
+        return raw.strip().lower() in ("1", "true", "yes", "on")
+    return bool(raw)
+
+
 def sanitize_old_price(raw):
     if raw in (None, ""):
         return None
@@ -260,11 +267,16 @@ MAX_PER_PAGE = 48
 @app.route("/api/filters", methods=["GET"])
 def api_filters():
     """Полный список категорий и брендов — нужен, чтобы построить чипы
-    фильтров сразу, не дожидаясь подгрузки всех товаров постранично."""
+    фильтров сразу, не дожидаясь подгрузки всех товаров постранично.
+    ?gold=1 — только категории/бренды внутри коллекции Gold.
+    gold_count — сколько всего товаров Gold (витрина показывает вкладку, только если > 0)."""
     items = load_products()
+    gold_count = sum(1 for p in items if p.get("gold"))
+    if request.args.get("gold") in ("1", "true"):
+        items = [p for p in items if p.get("gold")]
     categories = sorted({(p.get("category") or "").strip() for p in items if (p.get("category") or "").strip()})
     brands = sorted({(p.get("brand") or "").strip() for p in items if (p.get("brand") or "").strip()})
-    return jsonify({"categories": categories, "brands": brands})
+    return jsonify({"categories": categories, "brands": brands, "gold_count": gold_count})
 
 
 @app.route("/api/products", methods=["GET"])
@@ -294,6 +306,8 @@ def api_products():
     sort = (request.args.get("sort") or "default").strip()
 
     filtered = items
+    if request.args.get("gold") in ("1", "true"):
+        filtered = [p for p in filtered if p.get("gold")]
     if category and category != "Все":
         filtered = [p for p in filtered if (p.get("category") or "") == category]
     if brand and brand != "Все":
@@ -631,6 +645,7 @@ def admin_create_product():
         "price": price,
         "old_price": sanitize_old_price(data.get("old_price")),
         "badge": sanitize_badge(data.get("badge")),
+        "gold": sanitize_gold(data.get("gold")),
         "sizes": sizes or ["One size"],
         "swatch": int(data.get("swatch") or 0) % 6,
         "desc": (data.get("desc") or "").strip(),
@@ -664,6 +679,8 @@ def admin_update_product(pid):
                 p["old_price"] = sanitize_old_price(data.get("old_price"))
             if "badge" in data:
                 p["badge"] = sanitize_badge(data.get("badge"))
+            if "gold" in data:
+                p["gold"] = sanitize_gold(data.get("gold"))
             if "sizes" in data:
                 sizes_raw = data.get("sizes", "")
                 p["sizes"] = [s.strip() for s in sizes_raw.split(",") if s.strip()] if isinstance(sizes_raw, str) else (sizes_raw or p["sizes"])

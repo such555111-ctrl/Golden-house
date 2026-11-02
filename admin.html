@@ -140,6 +140,8 @@
   .badge-opt:active{transform:scale(.92);}
   .badge-opt:hover{color:var(--text);border-color:var(--muted-dim);}
   .badge-opt.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+  .badge-opt.gold.active{border-color:#B8902F;color:#8A6A12;background:linear-gradient(135deg,rgba(232,200,110,.35),rgba(184,144,47,.18));}
+  .gold-tag{display:inline-block;padding:1px 8px;border-radius:999px;font-size:10px;font-weight:600;letter-spacing:.06em;color:#7A5B0E;background:linear-gradient(135deg,#F6E3A3,#D9B556);}
   .price-old{color:var(--muted);text-decoration:line-through;margin-right:6px;}
 
   .login-box{max-width:360px;margin:18vh auto 0;text-align:center;position:relative;z-index:1;}
@@ -463,6 +465,12 @@
       <button type="button" class="badge-opt" data-badge="instock">В наличии</button>
     </div>
 
+    <label>Коллекция Gold <span class="muted" style="text-transform:none;letter-spacing:0;">— товар появится в отдельном разделе «Gold» в каталоге</span></label>
+    <div class="badge-picker" id="goldPicker">
+      <button type="button" class="badge-opt" data-gold="0">Обычный</button>
+      <button type="button" class="badge-opt gold" data-gold="1">✦ Gold</button>
+    </div>
+
     <label>Размеры (через запятую)</label>
     <input type="text" id="fSizes" placeholder="One Size, 16, 17, 18">
 
@@ -550,6 +558,7 @@ let currentTab = 'products';
 let editingId = null;
 let selectedSwatch = 0;
 let selectedBadge = '';
+let selectedGold = false;
 let uploadedImages = [];
 let editingPromoId = null;
 let selectedPromoType = 'percent';
@@ -688,7 +697,7 @@ function renderList(){
       <div class="thumb" style="${cover ? `background-image:url('${cover}')` : `background:${SWATCHES[p.swatch % SWATCHES.length]}`}"></div>
       <div class="card-body">
         <div class="card-title">${p.name || '(без названия)'}</div>
-        <div class="card-sub">${p.category || '—'}${p.brand ? ' · ' + p.brand : ''} · ${priceLineHTML(p)}${badgeTag}</div>
+        <div class="card-sub">${p.category || '—'}${p.brand ? ' · ' + p.brand : ''} · ${priceLineHTML(p)}${badgeTag}${p.gold ? ' · <span class="gold-tag">✦ Gold</span>' : ''}</div>
         <div class="card-sub">Размеры: ${(p.sizes||[]).join(', ')}</div>
         <div class="card-sub">${photoCount ? `Фото: ${photoCount}` : 'Без фото'}</div>
         <div class="card-actions">
@@ -1059,6 +1068,14 @@ function renderBadgePicker(){
     btn.classList.toggle('active', btn.dataset.badge === selectedBadge);
   });
 }
+function renderGoldPicker(){
+  document.querySelectorAll('#goldPicker .badge-opt').forEach(btn=>{
+    btn.classList.toggle('active', (btn.dataset.gold === '1') === selectedGold);
+  });
+}
+document.querySelectorAll('#goldPicker .badge-opt').forEach(btn=>{
+  btn.onclick = () => { selectedGold = btn.dataset.gold === '1'; renderGoldPicker(); };
+});
 document.querySelectorAll('#badgePicker .badge-opt').forEach(btn=>{
   btn.onclick = () => { selectedBadge = btn.dataset.badge; renderBadgePicker(); };
 });
@@ -1080,9 +1097,11 @@ function openModal(id){
   document.getElementById('fDesc').value = p?.desc || '';
   selectedSwatch = p?.swatch || 0;
   selectedBadge = p?.badge || '';
+  selectedGold = !!p?.gold;
   uploadedImages = (p?.images && p.images.length) ? [...p.images] : (p?.image ? [p.image] : []);
   renderSwatchPicker();
   renderBadgePicker();
+  renderGoldPicker();
   renderPhotoGrid();
 
   document.getElementById('overlay').classList.add('open');
@@ -1172,7 +1191,7 @@ document.getElementById('saveBtn').onclick = async () => {
     return;
   }
 
-  const payload = { name, category, brand, price, old_price: oldPrice, badge: selectedBadge, sizes, desc, swatch: selectedSwatch, images: uploadedImages };
+  const payload = { name, category, brand, price, old_price: oldPrice, badge: selectedBadge, gold: selectedGold, sizes, desc, swatch: selectedSwatch, images: uploadedImages };
   const btn = document.getElementById('saveBtn');
   btn.disabled = true;
   try {
