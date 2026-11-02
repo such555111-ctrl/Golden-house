@@ -390,6 +390,27 @@
   .badge-tag{text-transform:none;letter-spacing:.02em;font-size:11px;padding:5px 12px;}
   .badge-instock{background:rgba(255,255,255,.92);color:#4C7A4A;border-color:rgba(76,122,74,.25);}
   .sheet:not(.open){box-shadow:none;}
+  /* ---- плашки: верхняя и нижняя ---- */
+  .hero-card,.info-card{position:relative;overflow:hidden;margin:18px 20px 0;border-radius:28px;}
+  .hero-card::before,.info-card::before{content:"";position:absolute;inset:8px;border:1px solid rgba(255,255,255,.65);border-radius:21px;pointer-events:none;}
+  .hero-card{padding:30px 26px 28px;background:linear-gradient(135deg,#FFF0F4 0%,#F9CBD9 55%,#EE9FB8 100%);box-shadow:0 14px 32px rgba(201,87,127,.2);color:#4A1F33;}
+  .hero-gem{position:absolute;right:14px;bottom:18px;width:104px;height:auto;color:rgba(255,255,255,.9);transform:rotate(10deg);}
+  .hero-eyebrow{position:relative;font-size:12.5px;font-weight:600;letter-spacing:.04em;color:#9A5A2E;max-width:78%;}
+  .hero-title{position:relative;margin:10px 0 0;font-family:var(--font-logo);font-weight:700;font-size:34px;line-height:1.1;letter-spacing:-.005em;max-width:84%;color:#4A1F33;}
+  .hero-sub{position:relative;margin:14px 0 22px;font-size:14.5px;line-height:1.55;color:#7A3A55;max-width:78%;}
+  .hero-btn{position:relative;border:none;background:#fff;color:var(--accent-hover);font-family:var(--font-heading);font-weight:700;font-size:14px;padding:15px 30px;border-radius:999px;cursor:pointer;box-shadow:0 8px 18px rgba(201,87,127,.22);transition:transform .2s var(--ease);}
+  .hero-btn:active{transform:scale(.96);}
+  .catalog-title{display:flex;align-items:center;gap:12px;margin:30px 20px 0;font-family:var(--font-logo);font-weight:600;font-size:30px;color:var(--text);scroll-margin-top:90px;}
+  .catalog-gem{width:11px;height:11px;background:var(--gold-soft);border:1px solid var(--gold);transform:rotate(45deg);border-radius:2px;}
+  .info-card{margin:28px 20px 0;padding:34px 24px 28px;text-align:center;color:#fff;background:linear-gradient(170deg,#E7A0B8 0%,#D9759A 55%,#C9577F 100%);box-shadow:0 16px 34px rgba(201,87,127,.28);}
+  .info-medal{position:relative;width:74px;height:74px;margin:0 auto;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-logo);font-style:italic;font-weight:600;font-size:28px;color:#fff;background:linear-gradient(180deg,#F7B6CB,#C9577F);border:2px solid #E6C98A;box-shadow:0 8px 18px rgba(120,40,70,.25), inset 0 0 0 4px rgba(255,255,255,.28);}
+  .info-name{position:relative;margin-top:18px;font-family:var(--font-logo);font-style:italic;font-weight:600;font-size:32px;line-height:1.1;}
+  .info-text{position:relative;margin:14px 0 22px;font-size:14.5px;line-height:1.65;color:rgba(255,255,255,.95);}
+  .info-btns{position:relative;display:flex;gap:12px;}
+  .info-btn{flex:1;border-radius:999px;padding:15px 10px;font-family:var(--font-heading);font-weight:700;font-size:14px;cursor:pointer;transition:transform .2s var(--ease);}
+  .info-btn:active{transform:scale(.96);}
+  .info-btn.solid{background:#fff;border:1.5px solid #fff;color:var(--accent-hover);}
+  .info-btn.ghost{background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.85);color:#fff;}
 </style>
 </head>
 <body>
@@ -437,6 +458,15 @@
     <div class="ticker" id="ticker"></div>
   </div>
 
+  <section class="hero-card" aria-label="Golden House">
+    <svg class="hero-gem" viewBox="0 0 120 110" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true"><path d="M30 8h60l26 30-56 66L4 38Z"/><path d="M4 38h112M30 8l30 30 30-30M60 38v66M36 38l24 66M84 38 60 104"/></svg>
+    <div class="hero-eyebrow">Бутик украшений в Садоводе</div>
+    <h1 class="hero-title">Премиальная бижутерия и золото</h1>
+    <p class="hero-sub">Каждая деталь подчёркивает ваш стиль.</p>
+    <button class="hero-btn" id="heroBtn" type="button">Смотреть каталог</button>
+  </section>
+  <h2 class="catalog-title" id="catalogAnchor">Каталог<span class="catalog-gem" aria-hidden="true"></span></h2>
+
   <div class="filters-row">
     <div class="filters" id="filters"></div>
     <div class="sort-wrap">
@@ -460,6 +490,15 @@
       <div class="grid-loader-dot"></div><div class="grid-loader-dot"></div><div class="grid-loader-dot"></div>
     </div>
   </div>
+  <section class="info-card" aria-label="Контакты Golden House">
+    <div class="info-medal">GH</div>
+    <div class="info-name">Golden House</div>
+    <p class="info-text">Премиальная бижутерия и золотые украшения.<br>ТК Садовод: 11 линия, место 74-76.</p>
+    <div class="info-btns">
+      <button class="info-btn solid" id="waBtn" type="button">WhatsApp</button>
+      <button class="info-btn ghost" id="chBtn" type="button">Наш канал</button>
+    </div>
+  </section>
 </div>
 
 <div class="backdrop" id="backdrop"></div>
@@ -770,6 +809,23 @@ function showToast(text, type){
   };
   setTimeout(dismiss, 2400);
 }
+
+// --- плашки: ссылки (WhatsApp — только цифры номера, например 79991234567) ---
+const SHOP_WHATSAPP = '';
+const SHOP_CHANNEL = 'https://t.me/Golden_1176';
+function openExt(url){
+  try{
+    if (tg && /^https:\/\/t\.me\//.test(url) && tg.openTelegramLink) return tg.openTelegramLink(url);
+    if (tg && tg.openLink) return tg.openLink(url);
+  }catch(e){}
+  window.open(url, '_blank');
+}
+document.getElementById('heroBtn').addEventListener('click', () => {
+  document.getElementById('catalogAnchor').scrollIntoView({ behavior:'smooth' });
+});
+document.getElementById('chBtn').addEventListener('click', () => openExt(SHOP_CHANNEL));
+if (SHOP_WHATSAPP) document.getElementById('waBtn').addEventListener('click', () => openExt('https://wa.me/' + SHOP_WHATSAPP));
+else document.getElementById('waBtn').style.display = 'none';
 
 function renderTicker(){
   const t = document.getElementById('ticker');
